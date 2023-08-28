@@ -10,13 +10,14 @@ ARG LINUX_SRC_DIR="/linux-src"
 ARG VM_DIR="/vm"
 
 
+# linux-image-kvm is installed to make libguestfs-tools happy, because it need a kernel and an simple rootfs to run VM
 RUN apt-get update && \
 	apt-get install -y wget vim \
 					qemu-system-x86 git \
 					build-essential cmake gcc libudev-dev libnl-3-dev libnl-route-3-dev \
 					ninja-build pkg-config valgrind python3-dev cython3 python3-docutils pandoc \
 					bc fakeroot libncurses5-dev libssl-dev ccache bison flex libelf-dev dwarves \ 
-					cpio rsync && \
+					rsync libguestfs-tools linux-image-kvm && \
 	rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p $VM_DIR && \
@@ -34,11 +35,8 @@ RUN cd $LINUX_SRC_DIR && \
 	echo "# CONFIG_DEBUG_INFO_REDUCED is not set" >> config_patch.config && \
 	make defconfig && \
 	./scripts/kconfig/merge_config.sh .config ./config_patch.config && \
-	make -j20
-
-RUN apt-get update && apt-get install -y libguestfs-tools
-
-RUN apt-get install -y linux-image-kvm
+	make -j20 && \
+	make scripts_gdb
 
 RUN mkdir -p $ROOTFS_DIR && \
 	tar -Jxf $ROOTFS_TARBALL_PATH -C $ROOTFS_DIR && \
@@ -56,6 +54,10 @@ RUN mkdir -p $ROOTFS_DIR && \
 
 	echo "ssh-keygen -A " >> /tmp/vm_init.sh && \
 	echo "apt-get purge --auto-remove -y snapd multipath-tools" >> /tmp/vm_init.sh && \
+	echo "apt-get purge --auto-remove -y snapd multipath-tools" >> /tmp/vm_init.sh && \
+	echo 'mkdir -p /run/systemd/resolve/' >> /tmp/vm_init.sh && \
+	echo 'echo "nameserver 8.8.8.8" > /run/systemd/resolve/stub-resolv.conf' >> /tmp/vm_init.sh && \
+	echo "apt-get update && apt-get install -y build-essential gdb" >> /tmp/vm_init.sh && \
 	echo "mkdir -p /host" >> /tmp/vm_init.sh && \
 	echo "systemctl enable mount_9p" >> /tmp/vm_init.sh && \
 
