@@ -43,7 +43,7 @@ RUN mkdir -p $ROOTFS_DIR && \
 	cd $LINUX_SRC_DIR && \
 	make INSTALL_MOD_PATH=$ROOTFS_DIR modules_install && \
 	echo "root:root" | chpasswd -R $ROOTFS_DIR && \
-	
+	# generate a systemd service config file to mount 9p fs at booting. adding it to fstab seems not working.
 	echo "[Unit]" > $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "Description=Mount 9p to access host fs" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "After=network.target" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
@@ -51,17 +51,22 @@ RUN mkdir -p $ROOTFS_DIR && \
 	echo "ExecStart=mount -t 9p -o trans=virtio,version=9p2000.L,access=any hostshare /host" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "[Install]" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "WantedBy=default.target" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
-
+	# == finish generating systemd config
+	#
+	# generate a tmp script to run in chroot environment to modify the rootfs for qemu
 	echo "ssh-keygen -A " >> /tmp/vm_init.sh && \
-	echo "apt-get purge --auto-remove -y snapd multipath-tools" >> /tmp/vm_init.sh && \
 	echo "apt-get purge --auto-remove -y snapd multipath-tools" >> /tmp/vm_init.sh && \
 	echo 'mkdir -p /run/systemd/resolve/' >> /tmp/vm_init.sh && \
 	echo 'echo "nameserver 8.8.8.8" > /run/systemd/resolve/stub-resolv.conf' >> /tmp/vm_init.sh && \
 	echo "apt-get update && apt-get install -y build-essential gdb" >> /tmp/vm_init.sh && \
 	echo "mkdir -p /host" >> /tmp/vm_init.sh && \
+	#  -- this link below is to make rdma-core happy, since the build system of rdma-core can only build binary that "run inplace"
+	#  -- with this link, the binary in qemu has the save path as it in the devcontainer. so we can build it in devcontainer and 
+	#  -- run it in qemu.
+	echo "ln -sf /host/workspaces /workspaces" >> /tmp/vm_init.sh && \
 	echo "systemctl enable mount_9p" >> /tmp/vm_init.sh && \
-
 	chroot $ROOTFS_DIR /bin/sh < /tmp/vm_init.sh && \
+	# finish generate and run tmp script.
 	virt-make-fs --label cloudimg-rootfs --format=qcow2 --type=ext4 --size=+1G $ROOTFS_DIR /rootfs.qcow2
 
 	
