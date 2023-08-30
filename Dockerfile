@@ -44,11 +44,12 @@ RUN mkdir -p $ROOTFS_DIR && \
 	make INSTALL_MOD_PATH=$ROOTFS_DIR modules_install && \
 	echo "root:root" | chpasswd -R $ROOTFS_DIR && \
 	# generate a systemd service config file to mount 9p fs at booting. adding it to fstab seems not working.
+	# after mounting,we also run a script mounted from host to do some init work. 
 	echo "[Unit]" > $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "Description=Mount 9p to access host fs" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "After=network.target" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "[Service]" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
-	echo "ExecStart=mount -t 9p -o trans=virtio,version=9p2000.L,access=any hostshare /host" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
+	echo "ExecStart=bash -c \"mount -t 9p -o trans=virtio,version=9p2000.L,access=any hostshare /host && /host/workspaces/dtld-rdma-driver/scripts/for_qemu/boot_init.sh\"" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "[Install]" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "WantedBy=default.target" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	# == finish generating systemd config
@@ -64,6 +65,8 @@ RUN mkdir -p $ROOTFS_DIR && \
 	#  -- with this link, the binary in qemu has the save path as it in the devcontainer. so we can build it in devcontainer and 
 	#  -- run it in qemu.
 	echo "ln -sf /host/workspaces /workspaces" >> /tmp/vm_init.sh && \
+	#  -- make run scripts stored in devcontainer more easily.
+	echo "echo \"export PATH=$PATH:/host/workspaces/dtld-rdma-driver/scripts/for_qemu:/host/workspaces/rdma-core/build/bin\" > /etc/profile.d/set_path.sh" >> /tmp/vm_init.sh && \
 	echo "systemctl enable mount_9p" >> /tmp/vm_init.sh && \
 	chroot $ROOTFS_DIR /bin/sh < /tmp/vm_init.sh && \
 	# finish generate and run tmp script.
