@@ -66,7 +66,7 @@ RUN mkdir -p $ROOTFS_DIR && \
 	#  -- run it in qemu.
 	echo "ln -sf /host/workspaces /workspaces" >> /tmp/vm_init.sh && \
 	#  -- make run scripts stored in devcontainer more easily.
-	echo "echo \"export PATH=$PATH:/host/workspaces/dtld-rdma-driver/scripts/for_qemu:/host/workspaces/rdma-core/build/bin\" > /etc/profile.d/set_path.sh" >> /tmp/vm_init.sh && \
+	echo "echo \"export PATH=$PATH:/host/workspaces/dtld-rdma-driver/scripts/for_qemu:/host/workspaces/dtld-rdma-driver/rdma-core/build/bin\" > /etc/profile.d/set_path.sh" >> /tmp/vm_init.sh && \
 	echo "systemctl enable mount_9p" >> /tmp/vm_init.sh && \
 	chroot $ROOTFS_DIR /bin/sh < /tmp/vm_init.sh && \
 	# finish generate and run tmp script.
