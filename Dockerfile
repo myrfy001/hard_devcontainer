@@ -28,6 +28,9 @@ RUN mkdir -p $VM_DIR && \
 RUN cd $LINUX_SRC_DIR && \
 	echo "" > config_patch.config && \
 	echo "CONFIG_INFINIBAND=m" >> config_patch.config && \
+	echo "CONFIG_INFINIBAND_USER_MAD=m" >> config_patch.config && \
+	echo "CONFIG_INFINIBAND_USER_ACCESS=m" >> config_patch.config && \
+	echo "CONFIG_RDMA_RXE=m" >> config_patch.config && \
 	echo "# CONFIG_WERROR is not set" >> config_patch.config && \
 	echo "# CONFIG_RANDOMIZE_BASE is not set" >> config_patch.config && \
 	echo "CONFIG_DEBUG_INFO_DWARF5=y" >> config_patch.config && \
@@ -59,7 +62,7 @@ RUN mkdir -p $ROOTFS_DIR && \
 	echo "apt-get purge --auto-remove -y snapd multipath-tools" >> /tmp/vm_init.sh && \
 	echo 'mkdir -p /run/systemd/resolve/' >> /tmp/vm_init.sh && \
 	echo 'echo "nameserver 8.8.8.8" > /run/systemd/resolve/stub-resolv.conf' >> /tmp/vm_init.sh && \
-	echo "apt-get update && apt-get install -y build-essential gdb" >> /tmp/vm_init.sh && \
+	echo "apt-get update && apt-get install -y build-essential gdb libudev-dev libnl-3-dev libnl-route-3-dev " >> /tmp/vm_init.sh && \
 	echo "mkdir -p /host" >> /tmp/vm_init.sh && \
 	#  -- this link below is to make rdma-core happy, since the build system of rdma-core can only build binary that "run inplace"
 	#  -- with this link, the binary in qemu has the save path as it in the devcontainer. so we can build it in devcontainer and 
