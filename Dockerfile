@@ -8,17 +8,29 @@ ARG ROOTFS_TARBALL_PATH="/vm/origin_disk.img"
 ARG ROOTFS_DIR="/rootfs"
 ARG LINUX_SRC_DIR="/linux-src"
 ARG VM_DIR="/vm"
-
+ARG XILINX_QEMU_GIT="https://github.com/Xilinx/qemu.git"
+ARG XILINX_QEMU_GIT_BRANCH="master"
 
 # linux-image-kvm is installed to make libguestfs-tools happy, because it need a kernel and an simple rootfs to run VM
 RUN apt-get update && \
-	apt-get install -y wget vim \
-					qemu-system-x86 git \
+	apt-get install -y wget vim git tmux\
+					# the following line is for qemu build
+					zlib1g-dev libglib2.0-dev libpixman-1-dev libfdt-dev libcap-ng-dev libattr1-dev \
+					# the following lines is for linux kernel build
 					build-essential cmake gcc libudev-dev libnl-3-dev libnl-route-3-dev \
 					ninja-build pkg-config valgrind python3-dev cython3 python3-docutils pandoc \
 					bc fakeroot libncurses5-dev libssl-dev ccache bison flex libelf-dev dwarves \ 
 					rsync libguestfs-tools linux-image-kvm && \
 	rm -rf /var/lib/apt/lists/*
+
+RUN	git clone $XILINX_QEMU_GIT --depth=1 --branch $XILINX_QEMU_GIT_BRANCH /qemu && \
+	cd /qemu && \
+    mkdir qemu_build && \
+    cd qemu_build && \
+    ../configure  --target-list=x86_64-softmmu --enable-virtfs && \
+    make -j && \
+	make install && \
+	rm -rf /qemu
 
 RUN mkdir -p $VM_DIR && \
 	wget $UBUNTU_ROOTFS_URL -O $ROOTFS_TARBALL_PATH && \
@@ -57,12 +69,16 @@ RUN mkdir -p $ROOTFS_DIR && \
 	echo "WantedBy=default.target" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	# == finish generating systemd config
 	#
+	# After switch to Xilinx Qemu, it seems that the network service has some problems. It will block boot for a long time, so we need to fix it
+	# The following code should be removed when the network problem has been solved.
+	sed -i '/ExecStart=/s/$/ --timeout 1/' $ROOTFS_DIR/etc/systemd/system/network-online.target.wants/systemd-networkd-wait-online.service && \
+	#
 	# generate a tmp script to run in chroot environment to modify the rootfs for qemu
 	echo "ssh-keygen -A " >> /tmp/vm_init.sh && \
 	echo "apt-get purge --auto-remove -y snapd multipath-tools" >> /tmp/vm_init.sh && \
 	echo 'mkdir -p /run/systemd/resolve/' >> /tmp/vm_init.sh && \
 	echo 'echo "nameserver 8.8.8.8" > /run/systemd/resolve/stub-resolv.conf' >> /tmp/vm_init.sh && \
-	echo "apt-get update && apt-get install -y build-essential gdb libudev-dev libnl-3-dev libnl-route-3-dev " >> /tmp/vm_init.sh && \
+	echo "apt-get update && apt-get install -y build-essential gdb libudev-dev libnl-3-dev libnl-route-3-dev tmux " >> /tmp/vm_init.sh && \
 	echo "mkdir -p /host" >> /tmp/vm_init.sh && \
 	#  -- this link below is to make rdma-core happy, since the build system of rdma-core can only build binary that "run inplace"
 	#  -- with this link, the binary in qemu has the save path as it in the devcontainer. so we can build it in devcontainer and 
