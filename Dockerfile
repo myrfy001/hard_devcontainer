@@ -64,7 +64,7 @@ RUN mkdir -p $ROOTFS_DIR && \
 	echo "Description=Mount 9p to access host fs" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "After=network.target" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "[Service]" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
-	echo "ExecStart=bash -c \"mount -t 9p -o trans=virtio,version=9p2000.L,access=any hostshare /host && /host/workspaces/dtld-rdma-driver/scripts/for_qemu/boot_init.sh\"" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
+	echo "ExecStart=bash -c \"mount -t 9p -o trans=virtio,version=9p2000.L,access=any hostshare /host && /host/workspaces/open-rdma-driver/scripts/for_qemu/boot_init.sh\"" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "[Install]" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	echo "WantedBy=default.target" >> $ROOTFS_DIR/etc/systemd/system/mount_9p.service && \
 	# == finish generating systemd config
@@ -85,7 +85,7 @@ RUN mkdir -p $ROOTFS_DIR && \
 	#  -- run it in qemu.
 	echo "ln -sf /host/workspaces /workspaces" >> /tmp/vm_init.sh && \
 	#  -- make run scripts stored in devcontainer more easily.
-	echo "echo \"export PATH=$PATH:/host/workspaces/dtld-rdma-driver/scripts/for_qemu:/host/workspaces/dtld-rdma-driver/rdma-core/build/bin\" > /etc/profile.d/set_path.sh" >> /tmp/vm_init.sh && \
+	echo "echo \"export PATH=$PATH:/host/workspaces/open-rdma-driver/scripts/for_qemu:/host/workspaces/open-rdma-driver/rdma-core/build/bin\" > /etc/profile.d/set_path.sh" >> /tmp/vm_init.sh && \
 	echo "systemctl enable mount_9p" >> /tmp/vm_init.sh && \
 	chroot $ROOTFS_DIR /bin/sh < /tmp/vm_init.sh && \
 	# finish generate and run tmp script.
