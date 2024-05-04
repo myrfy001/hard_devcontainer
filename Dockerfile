@@ -9,13 +9,13 @@ ARG ROOTFS_DIR="/rootfs"
 ARG LINUX_SRC_DIR="/linux-src"
 ARG VM_DIR="/vm"
 ARG XILINX_QEMU_GIT="https://github.com/Xilinx/qemu.git"
-ARG XILINX_QEMU_GIT_BRANCH="master"
+ARG XILINX_QEMU_GIT_BRANCH="xilinx_v2023.2"
 
 # linux-image-kvm is installed to make libguestfs-tools happy, because it need a kernel and an simple rootfs to run VM
 RUN apt-get update && \
 	apt-get install -y wget vim git tmux\
 					# the following line is for qemu build
-					zlib1g-dev libglib2.0-dev libpixman-1-dev libfdt-dev libcap-ng-dev libattr1-dev python3-venv \
+					zlib1g-dev libglib2.0-dev libpixman-1-dev libfdt-dev libcap-ng-dev libattr1-dev python3-venv libslirp-dev \
 					# the following lines is for linux kernel build
 					build-essential cmake gcc libudev-dev libnl-3-dev libnl-route-3-dev \
 					ninja-build pkg-config valgrind python3-dev cython3 python3-docutils pandoc \
@@ -27,7 +27,7 @@ RUN	git clone $XILINX_QEMU_GIT --depth=1 --branch $XILINX_QEMU_GIT_BRANCH /qemu 
 	cd /qemu && \
     mkdir qemu_build && \
     cd qemu_build && \
-    ../configure  --target-list=x86_64-softmmu --enable-virtfs && \
+    ../configure  --target-list=x86_64-softmmu --enable-virtfs --enable-slirp && \
     make -j && \
 	make install && \
 	rm -rf /qemu
