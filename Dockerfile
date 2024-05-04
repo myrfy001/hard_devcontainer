@@ -15,7 +15,7 @@ ARG XILINX_QEMU_GIT_BRANCH="master"
 RUN apt-get update && \
 	apt-get install -y wget vim git tmux\
 					# the following line is for qemu build
-					zlib1g-dev libglib2.0-dev libpixman-1-dev libfdt-dev libcap-ng-dev libattr1-dev \
+					zlib1g-dev libglib2.0-dev libpixman-1-dev libfdt-dev libcap-ng-dev libattr1-dev python3-venv \
 					# the following lines is for linux kernel build
 					build-essential cmake gcc libudev-dev libnl-3-dev libnl-route-3-dev \
 					ninja-build pkg-config valgrind python3-dev cython3 python3-docutils pandoc \
